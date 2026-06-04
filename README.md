@@ -6,94 +6,101 @@
 [![DuckDB](https://img.shields.io/badge/DuckDB-local_lakehouse-FFF000?logo=duckdb&logoColor=black)](pipeline/)
 [![Airflow](https://img.shields.io/badge/Airflow-orchestration-017CEE?logo=apacheairflow&logoColor=white)](orchestration/dags/tlc_lakehouse_dag.py)
 
-This repository is a **portfolio-grade data engineering command center** built on NYC TLC Yellow Taxi data. It turns raw Parquet trip records into governed analytics products through ingestion, medallion transformations, data contracts, dbt marts, SLA monitoring, CI gates, and a Streamlit dashboard.
+An end-to-end local lakehouse for NYC TLC Yellow Taxi data. The project converts raw trip records into governed analytical tables and serves them through a DuckDB-backed Streamlit command center.
 
-It is designed to show the skills hiring teams actually inspect in 2026: not a notebook, not a toy ETL script, but a complete local-first data platform with reproducible data, testable transforms, analytical modeling, and operational controls.
+The system is built around a practical production pattern: **ingest raw data, validate it, transform it into trusted analytical layers, monitor it, and expose it through a decision dashboard.**
 
-## Platform Dashboard
+<img src="docs/command-center-preview.svg" alt="NYC Taxi Lakehouse command center preview" width="100%">
 
-| Signal | What This Repo Proves | Evidence |
-| --- | --- | --- |
-| Data platform design | Bronze, Silver, and Gold layers with clear ownership boundaries | [pipeline/](pipeline/) |
-| Source ingestion | Public Parquet ingestion with schema validation and quarantine path | [tlc_extractor.py](ingestion/extractors/tlc_extractor.py) |
-| Analytics engineering | dbt staging, intermediate, and mart models with schema tests | [models/](models/) |
-| Data quality | Contract checks for nulls, ranges, temporal order, duplicates, and business rules | [silver_contract.py](monitoring/contracts/silver_contract.py) |
-| Operational readiness | Airflow DAG with sensors, retries, quality gate, dbt tasks, and SLA checks | [tlc_lakehouse_dag.py](orchestration/dags/tlc_lakehouse_dag.py) |
-| Observability | Freshness, volume, date coverage, null rate, and revenue sanity checks | [sla_monitor.py](monitoring/sla/sla_monitor.py) |
-| Product delivery | Streamlit dashboard reading Gold tables through DuckDB | [dashboard/app.py](dashboard/app.py) |
-| Engineering discipline | Unit tests, integration tests, CI workflow, linting, type checking, coverage gate | [tests/](tests/) |
+## Command Center
 
-## Executive Cockpit
+The dashboard reads Gold-layer Parquet tables through DuckDB and presents the lakehouse as an operations cockpit.
 
-| Product Area | Built Artifact | Hiring Signal |
-| --- | --- | --- |
-| Pipeline | Source -> Bronze -> Silver -> Gold | Can design batch data systems end to end |
-| Modeling | `fct_trips`, `fct_hourly_demand`, `dim_date`, `dim_location`, `dim_vendor` | Understands dimensional modeling and BI access patterns |
-| Quality | Silver contract runner plus dbt tests | Treats data quality as code, not manual inspection |
-| Reliability | Idempotent stages, quarantine handling, SLA checks | Thinks like an operator, not only a developer |
-| Analytics | Demand, revenue, fare, payment, speed, and borough metrics | Connects data infrastructure to business questions |
-| Delivery | Streamlit command-center dashboard | Can turn pipelines into usable decision products |
-
-## Dashboard Experience
-
-The Streamlit dashboard is the visible product layer of the lakehouse. It reads directly from Gold Parquet tables through DuckDB and presents a city-scale operations view:
-
-| Dashboard Panel | Business Question |
+| Panel | Purpose |
 | --- | --- |
-| KPI strip | How many trips, how much revenue, what fare/tip/distance profile? |
-| Hourly demand | When does demand peak and how does fare behavior move by hour? |
-| Borough revenue | Which pickup regions drive the strongest revenue? |
-| Daily trend | Are trip volume and revenue stable across the period? |
-| Payment split | How much demand is credit card, cash, dispute, or no-charge? |
-| Speed by hour | Where do congestion and trip duration change through the day? |
-| Fare distribution | Are fares shaped normally or affected by outlier/rate-code behavior? |
-
-Run it after building the pipeline:
+| KPI strip | Trip count, revenue, average fare, tip rate, distance, and payment mix |
+| Hourly demand | Demand peaks by pickup hour with fare movement overlay |
+| Borough revenue | Pickup-region revenue contribution and fare behavior |
+| Daily trend | Volume and revenue stability across the processed period |
+| Payment split | Credit card, cash, no-charge, dispute, and unknown payment profile |
+| Speed by hour | Congestion pattern through average speed and trip duration |
+| Fare distribution | Fare-shape inspection for outlier and rate-code behavior |
 
 ```bash
 streamlit run dashboard/app.py
 ```
 
-## System Architecture
+## Lakehouse Flow
 
 ```mermaid
 flowchart LR
-    A["NYC TLC Parquet Data"] --> B["Ingestion: PyArrow + schema validation"]
+    A["NYC TLC Parquet"] --> B["Ingestion"]
     B --> C["Bronze: raw partitioned Parquet"]
-    C --> D["Silver: typed, cleaned, enriched trips"]
-    D --> E["Data Contracts: quality checks + quarantine path"]
-    E --> F["Gold: dimensional marts"]
-    F --> G["DuckDB query layer"]
+    C --> D["Silver: typed + enriched trips"]
+    D --> E["Contracts + quarantine"]
+    E --> F["Gold marts"]
+    F --> G["DuckDB"]
     G --> H["Streamlit dashboard"]
-    F --> I["dbt tests + docs"]
+    F --> I["dbt tests"]
     F --> J["SLA monitor"]
-    J --> K["Airflow quality gate"]
+    J --> K["Airflow DAG"]
 ```
 
-## Data Product Layers
+## Platform Capabilities
 
-| Layer | Purpose | Technical Decisions |
-| --- | --- | --- |
-| Bronze | Preserve source data in an auditable format | Partitioned Parquet, append-safe writes, source schema checks |
-| Silver | Produce trusted analytical records | Type casting, timestamp parsing, derived features, IQR outlier quarantine |
-| Gold | Serve BI and dashboard use cases | Star schema, dimension tables, pre-aggregated hourly demand |
-| Monitoring | Detect breakage before consumers do | Row count, freshness, null-rate, future timestamp, volume trend checks |
-| CI | Keep the repo reviewable and reproducible | Unit tests, integration tests, dbt validation, quality gate, coverage target |
-
-## Skill Map
-
-| Skill Category | Demonstrated Through |
+| Area | Implementation |
 | --- | --- |
-| Python data engineering | PyArrow ingestion, Pandas transforms, typed pipeline entrypoint |
-| SQL analytics engineering | dbt staging, intermediate logic, marts, schema contracts |
-| Lakehouse thinking | Medallion architecture, Parquet storage, Gold access layer |
-| Data quality | Contract runner, dbt tests, business-rule validation, quarantine design |
-| Orchestration | Airflow DAG, dependency graph, retries, sensors, branch logic |
-| Observability | SLA monitor, freshness checks, volume trend checks, sanity checks |
-| Dashboarding | Streamlit, Plotly, DuckDB-backed analytics views |
-| Software engineering | Modular code, tests, CI, `.gitignore`, `.gitattributes`, reproducible setup |
+| Ingestion | Public TLC Parquet extraction with PyArrow-based schema inspection |
+| Storage | Local Parquet lakehouse with Bronze, Silver, and Gold layers |
+| Transformation | Typed Python transforms for Silver and dbt SQL models for marts |
+| Modeling | Fact and dimension tables for trips, hourly demand, dates, locations, and vendors |
+| Quality | Contract checks for nulls, ranges, temporal order, duplicates, and business rules |
+| Reliability | Idempotent stage design, quarantine outputs, SLA checks, and Airflow task boundaries |
+| Observability | Freshness, volume, null-rate, future timestamp, date coverage, and revenue sanity checks |
+| Delivery | Streamlit and Plotly dashboard over DuckDB views on Gold Parquet files |
 
-## Quick Demo
+## Data Products
+
+| Table | Grain | Use |
+| --- | --- | --- |
+| `fct_trips` | One row per trip | Finance, trip analytics, payment behavior, airport/rate-code analysis |
+| `fct_hourly_demand` | Pickup date x pickup hour x pickup zone | Demand heatmaps, operating rhythm, BI fast path |
+| `dim_date` | One row per calendar day | Date joins, period filtering, weekday/weekend analysis |
+| `dim_location` | One row per TLC location ID | Borough, service zone, airport, and Manhattan flags |
+| `dim_vendor` | One row per vendor | Vendor labeling and reporting |
+
+## Data Quality Gates
+
+The Silver layer is treated as a contract boundary. Records are checked before they become dashboard-ready data.
+
+| Check Type | Examples |
+| --- | --- |
+| Completeness | Required pickup/dropoff timestamps, fare fields, location IDs |
+| Validity | Fare ranges, location ID ranges, payment type values |
+| Temporal consistency | Dropoff timestamp must be after pickup timestamp |
+| Business rules | Cash trips should not carry electronic tip amounts |
+| Duplicates | Repeated trip signatures are surfaced |
+| Distribution sanity | Average fare and distance are monitored for upstream drift |
+
+## Operations
+
+The Airflow DAG models a production-style schedule with clear task boundaries:
+
+```text
+wait_for_source
+  -> check_already_processed
+  -> extract_bronze
+  -> transform_silver
+  -> ge_data_contract
+  -> dbt_run
+  -> dbt_test
+  -> dbt_source_freshness
+  -> sla_volume_check
+  -> write_success_marker
+  -> notify_completion
+```
+
+## Quick Start
 
 ```bash
 python -m venv .venv
@@ -121,34 +128,12 @@ ingestion/          Source extraction and schema validation
 pipeline/           Bronze, Silver, and Gold transformation code
 models/             dbt staging, intermediate, and mart models
 monitoring/         Data contracts and SLA checks
-orchestration/      Airflow DAG for production-style scheduling
+orchestration/      Airflow DAG for scheduled execution
 dashboard/          Streamlit command-center dashboard
 scripts/            Synthetic data generator for demos and CI
 tests/              Unit and integration tests
 .github/workflows/  CI pipeline
 ```
-
-## CV Positioning
-
-Strong version:
-
-> Built an end-to-end NYC Taxi lakehouse command center with schema-validated ingestion, medallion transformations, quarantine handling, dbt Gold marts, CI quality gates, SLA monitoring, Airflow orchestration design, and a DuckDB-backed Streamlit analytics dashboard.
-
-Sharper senior version:
-
-> Designed a production-style local lakehouse for NYC TLC data, combining PyArrow/Pandas ingestion, DuckDB/dbt analytical modeling, contract-based data quality, operational SLA checks, and dashboard-ready Gold tables for revenue, demand, geospatial, and payment analytics.
-
-## Why This Is Not Just Another ETL Project
-
-Most portfolio ETL projects stop at "load data and make a chart." This one shows the full surface area of a real data engineering role:
-
-- Build reliable ingestion.
-- Model data for consumers.
-- Validate data before trust is assumed.
-- Monitor freshness and volume.
-- Keep transformations testable.
-- Expose insights through a dashboard.
-- Make the project reproducible for reviewers.
 
 ## Dataset
 
@@ -156,4 +141,4 @@ The project targets NYC Taxi and Limousine Commission Yellow Taxi trip records:
 
 https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 
-For repeatable local demos and CI, [scripts/generate_test_data.py](scripts/generate_test_data.py) creates a synthetic dataset shaped like the TLC data, so the project can be reviewed without downloading a large external file.
+For repeatable local runs and CI, [scripts/generate_test_data.py](scripts/generate_test_data.py) creates a synthetic dataset shaped like the TLC data, avoiding any dependency on large external downloads during review or testing.

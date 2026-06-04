@@ -8,4 +8,5 @@
 *.txt text eol=lf
 *.toml text eol=lf
 *.json text eol=lf
+*.svg text eol=lf
 Makefile text eol=lf
