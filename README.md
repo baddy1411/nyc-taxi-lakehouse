@@ -1,118 +1,159 @@
-# NYC Taxi Lakehouse
+# NYC Taxi Lakehouse Command Center
 
-Analytics engineering project for NYC TLC Yellow Taxi trip data. The repo implements a local lakehouse-style pipeline with ingestion, medallion transformations, data contracts, dbt marts, CI, and a Streamlit dashboard.
+[![Quality Gate](https://img.shields.io/badge/Quality_Gate-CI_configured-2E7D32)](.github/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](requirements.txt)
+[![dbt](https://img.shields.io/badge/dbt-analytics_engineering-FF694B?logo=dbt&logoColor=white)](models/)
+[![DuckDB](https://img.shields.io/badge/DuckDB-local_lakehouse-FFF000?logo=duckdb&logoColor=black)](pipeline/)
+[![Airflow](https://img.shields.io/badge/Airflow-orchestration-017CEE?logo=apacheairflow&logoColor=white)](orchestration/dags/tlc_lakehouse_dag.py)
 
-The goal is not to pretend this is a fully managed enterprise platform. It is a reproducible portfolio project that demonstrates the engineering judgment expected in a modern data engineering role: schema enforcement, idempotent processing, testable transformations, analytical modeling, data quality gates, and operational monitoring.
+This repository is a **portfolio-grade data engineering command center** built on NYC TLC Yellow Taxi data. It turns raw Parquet trip records into governed analytics products through ingestion, medallion transformations, data contracts, dbt marts, SLA monitoring, CI gates, and a Streamlit dashboard.
 
-## Why This Project Is Relevant
+It is designed to show the skills hiring teams actually inspect in 2026: not a notebook, not a toy ETL script, but a complete local-first data platform with reproducible data, testable transforms, analytical modeling, and operational controls.
 
-Current data engineering hiring signals are moving away from simple ETL notebooks and toward production-minded systems. This project is designed to show:
+## Platform Dashboard
 
-- Batch ingestion from a public Parquet source with schema validation.
-- Bronze, Silver, and Gold layers with clear ownership boundaries.
-- Deterministic transformation functions with unit and integration tests.
-- Data contracts on the Silver layer and dbt tests on analytical marts.
-- DuckDB-first local development, with SQL models structured for warehouse migration.
-- CI workflow covering linting, tests, dbt validation, and data quality checks.
-- Business-facing Gold tables for finance, operations, and geospatial analysis.
-
-## Architecture
-
-```text
-NYC TLC Parquet
-      |
-      v
-Bronze: raw validated Parquet, partitioned by pickup date
-      |
-      v
-Silver: typed, cleaned, enriched trips plus quarantine output
-      |
-      v
-Gold: dimensional marts and pre-aggregated demand tables
-      |
-      v
-Streamlit dashboard / dbt documentation / SLA checks
-```
-
-## Technology
-
-| Layer | Tools | Purpose |
+| Signal | What This Repo Proves | Evidence |
 | --- | --- | --- |
-| Ingestion | Python, Requests, PyArrow | Download/read TLC Parquet and validate source schema |
-| Storage | Parquet | Columnar local lakehouse format for reproducible demos |
-| Transformation | Pandas, DuckDB, dbt-duckdb | Python transforms for Silver, SQL models for marts |
-| Quality | Pydantic-style schema validation, custom contract runner, dbt tests | Catch schema, range, nullability, and business-rule failures |
-| Orchestration | Airflow DAG | Shows dependency design, retries, sensors, and SLA callbacks |
-| CI/CD | GitHub Actions | Lint, unit tests, integration tests, dbt validation, contract checks |
-| Dashboard | Streamlit, Plotly | Gold-layer analytics for portfolio demonstration |
+| Data platform design | Bronze, Silver, and Gold layers with clear ownership boundaries | [pipeline/](pipeline/) |
+| Source ingestion | Public Parquet ingestion with schema validation and quarantine path | [tlc_extractor.py](ingestion/extractors/tlc_extractor.py) |
+| Analytics engineering | dbt staging, intermediate, and mart models with schema tests | [models/](models/) |
+| Data quality | Contract checks for nulls, ranges, temporal order, duplicates, and business rules | [silver_contract.py](monitoring/contracts/silver_contract.py) |
+| Operational readiness | Airflow DAG with sensors, retries, quality gate, dbt tasks, and SLA checks | [tlc_lakehouse_dag.py](orchestration/dags/tlc_lakehouse_dag.py) |
+| Observability | Freshness, volume, date coverage, null rate, and revenue sanity checks | [sla_monitor.py](monitoring/sla/sla_monitor.py) |
+| Product delivery | Streamlit dashboard reading Gold tables through DuckDB | [dashboard/app.py](dashboard/app.py) |
+| Engineering discipline | Unit tests, integration tests, CI workflow, linting, type checking, coverage gate | [tests/](tests/) |
 
-## Project Structure
+## Executive Cockpit
 
-```text
-ingestion/          Source extraction and schema validation
-pipeline/           Bronze, Silver, and Gold transformation code
-models/             dbt project for staging, intermediate, and marts
-monitoring/         Data contracts and SLA checks
-orchestration/      Airflow DAG for production-style scheduling
-dashboard/          Streamlit analytics app
-scripts/            Synthetic data generator for CI and demos
-tests/              Unit and integration tests
-.github/workflows/  CI pipeline
+| Product Area | Built Artifact | Hiring Signal |
+| --- | --- | --- |
+| Pipeline | Source -> Bronze -> Silver -> Gold | Can design batch data systems end to end |
+| Modeling | `fct_trips`, `fct_hourly_demand`, `dim_date`, `dim_location`, `dim_vendor` | Understands dimensional modeling and BI access patterns |
+| Quality | Silver contract runner plus dbt tests | Treats data quality as code, not manual inspection |
+| Reliability | Idempotent stages, quarantine handling, SLA checks | Thinks like an operator, not only a developer |
+| Analytics | Demand, revenue, fare, payment, speed, and borough metrics | Connects data infrastructure to business questions |
+| Delivery | Streamlit command-center dashboard | Can turn pipelines into usable decision products |
+
+## Dashboard Experience
+
+The Streamlit dashboard is the visible product layer of the lakehouse. It reads directly from Gold Parquet tables through DuckDB and presents a city-scale operations view:
+
+| Dashboard Panel | Business Question |
+| --- | --- |
+| KPI strip | How many trips, how much revenue, what fare/tip/distance profile? |
+| Hourly demand | When does demand peak and how does fare behavior move by hour? |
+| Borough revenue | Which pickup regions drive the strongest revenue? |
+| Daily trend | Are trip volume and revenue stable across the period? |
+| Payment split | How much demand is credit card, cash, dispute, or no-charge? |
+| Speed by hour | Where do congestion and trip duration change through the day? |
+| Fare distribution | Are fares shaped normally or affected by outlier/rate-code behavior? |
+
+Run it after building the pipeline:
+
+```bash
+streamlit run dashboard/app.py
 ```
 
-## Quick Start
+## System Architecture
+
+```mermaid
+flowchart LR
+    A["NYC TLC Parquet Data"] --> B["Ingestion: PyArrow + schema validation"]
+    B --> C["Bronze: raw partitioned Parquet"]
+    C --> D["Silver: typed, cleaned, enriched trips"]
+    D --> E["Data Contracts: quality checks + quarantine path"]
+    E --> F["Gold: dimensional marts"]
+    F --> G["DuckDB query layer"]
+    G --> H["Streamlit dashboard"]
+    F --> I["dbt tests + docs"]
+    F --> J["SLA monitor"]
+    J --> K["Airflow quality gate"]
+```
+
+## Data Product Layers
+
+| Layer | Purpose | Technical Decisions |
+| --- | --- | --- |
+| Bronze | Preserve source data in an auditable format | Partitioned Parquet, append-safe writes, source schema checks |
+| Silver | Produce trusted analytical records | Type casting, timestamp parsing, derived features, IQR outlier quarantine |
+| Gold | Serve BI and dashboard use cases | Star schema, dimension tables, pre-aggregated hourly demand |
+| Monitoring | Detect breakage before consumers do | Row count, freshness, null-rate, future timestamp, volume trend checks |
+| CI | Keep the repo reviewable and reproducible | Unit tests, integration tests, dbt validation, quality gate, coverage target |
+
+## Skill Map
+
+| Skill Category | Demonstrated Through |
+| --- | --- |
+| Python data engineering | PyArrow ingestion, Pandas transforms, typed pipeline entrypoint |
+| SQL analytics engineering | dbt staging, intermediate logic, marts, schema contracts |
+| Lakehouse thinking | Medallion architecture, Parquet storage, Gold access layer |
+| Data quality | Contract runner, dbt tests, business-rule validation, quarantine design |
+| Orchestration | Airflow DAG, dependency graph, retries, sensors, branch logic |
+| Observability | SLA monitor, freshness checks, volume trend checks, sanity checks |
+| Dashboarding | Streamlit, Plotly, DuckDB-backed analytics views |
+| Software engineering | Modular code, tests, CI, `.gitignore`, `.gitattributes`, reproducible setup |
+
+## Quick Demo
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-# Generate a reproducible local dataset
 python scripts/generate_test_data.py --rows 10000
-
-# Run the local pipeline
 python run_pipeline.py --stage all --source data/raw/yellow_tripdata_2024_q1.parquet
 
-# Run tests
 pytest tests/unit -q
 pytest tests/integration -q
 
-# Validate dbt models
 cd models
-dbt deps --profiles-dir .
 dbt run --profiles-dir .
 dbt test --profiles-dir .
 
-# Launch dashboard
+cd ..
 streamlit run dashboard/app.py
 ```
 
-## What To Highlight On A CV
+## Repository Map
 
-Use one tight bullet, not a long list of tools:
+```text
+ingestion/          Source extraction and schema validation
+pipeline/           Bronze, Silver, and Gold transformation code
+models/             dbt staging, intermediate, and mart models
+monitoring/         Data contracts and SLA checks
+orchestration/      Airflow DAG for production-style scheduling
+dashboard/          Streamlit command-center dashboard
+scripts/            Synthetic data generator for demos and CI
+tests/              Unit and integration tests
+.github/workflows/  CI pipeline
+```
 
-> Built a reproducible NYC Taxi lakehouse pipeline processing 500K+ trips with PyArrow/Pandas/DuckDB, dbt marts, contract-based data quality checks, Airflow orchestration design, GitHub Actions CI, and Streamlit analytics dashboard.
+## CV Positioning
 
-If you want a more senior framing:
+Strong version:
 
-> Designed a production-style batch data platform for NYC TLC trip data: schema-validated ingestion, medallion transformations, quarantine handling, dimensional Gold marts, dbt tests, CI quality gates, SLA monitoring, and dashboard-ready analytics.
+> Built an end-to-end NYC Taxi lakehouse command center with schema-validated ingestion, medallion transformations, quarantine handling, dbt Gold marts, CI quality gates, SLA monitoring, Airflow orchestration design, and a DuckDB-backed Streamlit analytics dashboard.
 
-## Portfolio Notes
+Sharper senior version:
 
-This repo is strongest when presented as a local, production-minded lakehouse simulation. Do not overclaim managed cloud deployment unless Terraform, object storage, catalog integration, secrets, and deployment scripts are actually added.
+> Designed a production-style local lakehouse for NYC TLC data, combining PyArrow/Pandas ingestion, DuckDB/dbt analytical modeling, contract-based data quality, operational SLA checks, and dashboard-ready Gold tables for revenue, demand, geospatial, and payment analytics.
 
-Recommended next upgrades:
+## Why This Is Not Just Another ETL Project
 
-- Add Docker Compose for one-command local execution.
-- Add real Great Expectations or Soda Core suites if you want to claim those tools directly.
-- Add Terraform for S3, Glue/Athena, and IAM if you want to claim cloud lakehouse deployment.
-- Add a small benchmark report comparing raw Parquet scans versus Gold pre-aggregations.
-- Publish dbt docs screenshots and dashboard screenshots in `docs/`.
+Most portfolio ETL projects stop at "load data and make a chart." This one shows the full surface area of a real data engineering role:
+
+- Build reliable ingestion.
+- Model data for consumers.
+- Validate data before trust is assumed.
+- Monitor freshness and volume.
+- Keep transformations testable.
+- Expose insights through a dashboard.
+- Make the project reproducible for reviewers.
 
 ## Dataset
 
-The project targets NYC TLC Yellow Taxi trip records:
+The project targets NYC Taxi and Limousine Commission Yellow Taxi trip records:
 
 https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 
-For CI and demos, `scripts/generate_test_data.py` creates a statistically shaped synthetic dataset so tests do not depend on a large external download.
+For repeatable local demos and CI, [scripts/generate_test_data.py](scripts/generate_test_data.py) creates a synthetic dataset shaped like the TLC data, so the project can be reviewed without downloading a large external file.
