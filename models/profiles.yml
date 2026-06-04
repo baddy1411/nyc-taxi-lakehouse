@@ -1,0 +1,42 @@
+# models/profiles.yml
+# ════════════════════════════════════════════════════════════════
+# dbt connection profiles.
+#
+# Production: swap 'dev' target for 'prod' which reads from real
+# Silver Parquet via DuckDB (zero infra — no warehouse needed).
+# For BigQuery/Snowflake production, replace dbt-duckdb adapter.
+# ════════════════════════════════════════════════════════════════
+
+nyc_lakehouse:
+  target: dev
+
+  outputs:
+
+    # ── Local development ────────────────────────────────────────
+    dev:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', '../data/dbt_dev.duckdb') }}"
+      threads: 4
+      extensions:
+        - parquet
+        - json
+
+    # ── CI (ephemeral in-memory, no file writes) ─────────────────
+    ci:
+      type: duckdb
+      path: ":memory:"
+      threads: 2
+      extensions:
+        - parquet
+
+    # ── Production (reads from S3 if available) ──────────────────
+    prod:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', '../data/dbt_prod.duckdb') }}"
+      threads: 8
+      extensions:
+        - parquet
+        - json
+        - httpfs       # enables s3:// paths
+      settings:
+        s3_region: "{{ env_var('AWS_DEFAULT_REGION', 'us-east-1') }}"

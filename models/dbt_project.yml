@@ -1,0 +1,38 @@
+# models/dbt_project.yml
+
+name: nyc_lakehouse
+version: "1.0.0"
+config-version: 2
+
+profile: nyc_lakehouse
+
+model-paths:    ["./"]
+analysis-paths: ["../analyses"]
+test-paths:     ["../tests/dbt"]
+seed-paths:     ["seeds"]
+macro-paths:    ["macros"]
+target-path:    "target"
+clean-targets:  ["target", "dbt_packages"]
+
+models:
+  nyc_lakehouse:
+    staging:
+      +materialized: view
+      +tags: [staging]
+    intermediate:
+      +materialized: table
+      +tags: [intermediate]
+    marts:
+      finance:
+        +materialized: incremental
+        +tags: [gold, finance]
+      operations:
+        +materialized: incremental
+        +tags: [gold, operations]
+      geo:
+        +materialized: table
+        +tags: [gold, geo]
+
+vars:
+  execution_date: "{{ run_started_at.strftime('%Y-%m-%d') }}"
+  silver_path: "{{ env_var('LAKEHOUSE_SILVER_PATH', '../data/lakehouse/silver') }}"

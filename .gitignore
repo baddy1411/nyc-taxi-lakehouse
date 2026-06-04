@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# dbt
+models/target/
+models/dbt_packages/
+models/logs/
+*.duckdb
+
+# Data files — large, generated; not committed
+# Small reference data (seeds, fixtures) ARE committed
+data/raw/*.parquet
+data/lakehouse/
+!data/lakehouse/.gitkeep
+
+# Environment
+.env
+.env.*
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Airflow
+airflow/logs/
+airflow/plugins/
+
+# Terraform state
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.backup
