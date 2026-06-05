@@ -57,17 +57,17 @@ class SuiteResult:
         return self.passed / len(self.results) if self.results else 0.0
 
     def print_report(self) -> None:
-        print(f"\n{'═'*60}")
+        print(f"\n{'='*60}")
         print(f"  Data Contract: {self.suite_name}")
         print(f"  Rows checked : {self.rows_checked:,}")
         print(f"  Results      : {self.passed} passed / {self.failed} failed")
-        print(f"{'═'*60}")
+        print(f"{'='*60}")
         for r in self.results:
-            icon = "✓" if r.passed else "✗"
+            icon = "PASS" if r.passed else "FAIL"
             col  = f"[{r.column}]" if r.column else ""
             print(f"  {icon}  {r.name} {col}")
             if not r.passed:
-                print(f"       → {r.details}")
+                print(f"       -> {r.details}")
         print()
 
 

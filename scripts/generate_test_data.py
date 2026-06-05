@@ -114,7 +114,7 @@ def generate(n: int = 500_000, seed: int = 42, output_path: Path | None = None) 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(output_path, index=False)
     size_mb = output_path.stat().st_size / 1e6
-    print(f"✓ Generated {n:,} rows → {output_path}  ({size_mb:.1f} MB)")
+    print(f"Generated {n:,} rows -> {output_path}  ({size_mb:.1f} MB)")
     return output_path
 
 
